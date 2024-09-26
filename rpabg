@@ -1,0 +1,41 @@
+c rpa3bg -- burn generator deck for x-ray burst calculations
+
+c
+
+net 1    nt1    h1    h2    h3   he3   he4   li6   li7   be7
+
+net 1    be9    b8   b10   b11   c11   c12   c13   c14   n13
+
+net 1    n14   n15   o14   o15   o16   o17   o18
+
+net 1    f16   f17   f18   f19
+
+net 1   ne19  ne20
+
+net 1   ne21  ne22
+
+net 1   na21  na22  na23  mg23  mg24  mg25  mg26
+
+net 1   al25  al26  al27  si27  si28  si29  si30
+
+net 1   p30   p31   s31   s32   s33   s34   s35   s36
+
+net 1   fe56
+
+c define composition
+
+m fecomp    1. fe56
+
+m hcomp 0.05 h1 0.92 he4 0.01 n14 0.01 c12 0.01 n14
+
+c
+
+c specify grid composition
+
+g    0  1  fecomp
+
+g   50  1  fecomp
+
+g   51  1  hcomp
+
+g   60  1  hcomp

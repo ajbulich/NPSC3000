@@ -1,0 +1,1045 @@
+c This is a KEPLER generator file.  This generates the initial model, defines
+
+c various variables, configures various parameters, and provides a set of
+
+c commands for KEPLER to execute.  I've attempted to comment all of this below.
+
+
+c --- Network cards ---
+
+c KEPLER has an in-built APPROX19 network (this is the origin of Frank's various
+
+c approx networks).  You set the initial network to be APPROX by choosing net 1.
+
+c As I understand it, you can currently only select network 1 (APPROX), though
+
+c other networks are defined and can be configured to "turn on" later, such as
+
+c an NSE (NETNUM = 3) network and an ISE (NETNUM = 2, a QSE net) network.
+
+
+c Note that the large adaptive network is run in a co-processing fashion, such
+
+c that isotope compositions and related quantities are mapped back and forth
+
+c between a large network calculation and the simpler APPROX19 calculation.  You
+
+c _do_ get energy generation and such from the adaptive network with the proper
+
+c parameters, so you can effectively run with the large network as "the"
+
+c network, but for legacy reasons will still need to define APPROX19 here and the
+
+c larger network with a "bg" BURN generator.
+
+
+c These net cards define the isotopes carried by the network.  Though this
+
+c presents as a user option, Alex advises that you must define the APPROX19
+
+c network as it has been made into a hard-coded assumption in various parts of
+
+c the code.  So in practice, all modern Kepler generators will have the
+
+c following set of net cards.
+
+net 1 h1 he3 he4 n14 c12 o16 ne20 mg24
+
+net 1 si28 s32 ar36 ca40 ti44 cr48 fe52
+
+net 1 ni56 fe54 pn1 nt1
+
+
+c --- Mixture cards ---
+
+c Mixture cards allow you to define compositions that can then be used in other
+
+c cards to specify the chemical composition at different regions in the grid.
+
+
+c This composition is a proxy for the deeper part of the NS ocean, and is meant
+
+c to just be a sink for heat.  We achieve this with an iron 54 substrate.
+
+m nstar 1.00 fe54
+
+
+c He star abundance references
+
+c m acret 1.0 he4 0.0 c12 0.0 o16
+
+c m acret 0.3 he4 0.2 c12 0.5 o16
+
+c m acret 0. h1 0.980 he4 0. c12 0.02 n14 0. o16
+
+c H star abundance references
+
+c m acret 0.759 h1 0.24 he4 0.001 n14
+
+
+c Here we define the composition of material accreted from the companion
+
+m acret 0.05 h1 0.92 he4 0.01 n14 0.01 c12 0.01 o15
+
+
+c --- Grid cards ---
+
+c Grid cards define the initial 1D grid of mass zones, and make use of mixture
+
+c cards.  These are the cards you use to define the initial resolution.  Not every
+
+c zone needs to be specified.  Intermediate zones will have their data
+
+c interpolated (not sure exactly in what form) from provided grid zones.  You must
+
+c always define grid point 0 and the final grid point (which defines the initial
+
+c resolution).
+
+
+c c Reference: THIS GRID FOR HE ACCRETION
+
+c g 0   2.0000e25  1 nstar  4.0e+8  1.0e+9
+
+c g 1   1.9000e25  1 nstar  4.0e+8  1.0e+9
+
+c g 40  1.0000e22  1 nstar  4.0e+8  1.0e+8
+
+c g 50  1.0000e21  1 nstar  4.0e+8  1.0e+8
+
+c g 51  8.0000e20  1 acret  2.0e+8  1.0e+8
+
+c g 54  2.0000e20  1 acret  1.0e+8  1.0e+6
+
+c g 55  0.         1 acret  5.0e+7  1.0e+4
+
+c p bmasslow 2.800000019998950D33
+
+
+c Reference: THIS GRID IS FOR H-RICH ACCRETION
+
+c See docs for more details on grid card definitions.
+
+c Zone# mass(g)    net mix    temp (K) rho (g/cc)
+
+g 0     2.0000e25  1   nstar  1.0e+8   1.0e+9
+
+g 1     1.9000e25  1   nstar  1.0e+8   1.0e+9
+
+g 40    1.0000e21  1   nstar  1.0e+8   1.0e+6
+
+g 50    1.0000e20  1   nstar  1.0e+8   1.0e+6
+
+g 51    8.0000e19  1   acret  5.0e+7   1.0e+6
+
+g 54    2.0000e19  1   acret  2.5e+7   1.0e+8
+
+g 55    0.         1   acret  1.1e+7   1.0e+4
+
+
+c --- Parameter cards ---
+
+c Now we set various parameters configuring how Kepler will run.
+
+c These can be found in the docs.
+
+
+c - I/O, Graphics, and Termination Conditions -
+
+c nedit: Number of cycles between "ASCII edits" (I think this means how often
+
+c data is output to files)
+
+p nedit 100000
+
+
+c ndump: Number of cycles between restart dumps
+
+p ndump 10
+
+
+c irtype: x-axis type for plots
+
+c 1 -> radius in cm
+
+c 2 -> interior mass fraction, q
+
+c 3 -> interior mass in M_sol
+
+c 4 -> radius in cm
+
+c 5 -> moment of inertia coordinate (Msun*Rsun**2)
+
+c 6 -> zone #
+
+c ... several more options, up to 26, see docs
+
+c (Note: this provided generator had two instances of this, the second used to
+
+c be further down but I don't think that matters)
+
+p irtype 6
+
+p irtype 4
+
+
+c nsdump: Save every nsdump restart dumps
+
+p nsdump 1
+
+
+c iwinsize: Size of graphics window to be created in the form xxxxyyyy, where
+
+c xxxx, yyyy = (width, height) in pixels.  Must use leading 0's.
+
+p iwinsize 14001000
+
+
+c ncycqq: Number of KEPLER cycles between post-processor dump cycles
+
+p ncycqq 100000
+
+
+c npixedit: Graphics edits to the monitor are made every npixedit KEPLER cycles
+
+p npixedit 1
+
+
+c h1hdep: Central hydrogen abundance at which the #hdep dump is made
+
+p h1hdep -1.d0
+
+
+c he4hedep: Central helium abundance at which the #hedep dump is made
+
+p he4hedep -1.d0
+
+
+c si28dep: Central si28 mass fraction at which the #sidep dump is made, if the
+
+c mass fractions of o16 and he4 are below 0.01
+
+p si28dep -1.d0
+
+
+c iplotb: Control isotope/network used in abundance plots
+
+c 0 -> Use APPROX/ISE/NSE abundances
+
+c 1 -> Only plot BURN abundances in APPROX regime
+
+c 2 -> Plot BURN abundances everywhere BURN is used (above bmasslow p# 419)
+
+c 3 -> Plot BURN abundances everywhere
+
+p iplotb 2
+
+
+c jp0: Innermost zone to plot
+
+p jp0 40
+
+
+c lcout: Number of outer layers to be written in light curve output file, .lc
+
+c 0 means write no file
+
+p lcout 10
+
+
+c ncnvout: Write out convection plot file data (*.cnv) every ncnvout cycles.
+
+c Off when 0 (but I don't see these files, is this still working?)
+
+p ncnvout 1
+
+
+c abunlim: Least elemental mass fraction plotted or listed in a term ion edit
+
+p abunlim 1.d-4
+
+
+c no h/he burn dumps
+
+c h1hburn: Hydrogen mass fraction at which to make the #hburn dump
+
+p h1hburn -1.
+
+c he4heburn: Helium mass fraction at which to make the #heburn dump
+
+p he4hebrn -1.
+
+
+
+c - Gridding and Boundaries -
+
+c dstat says to take the specified initial grid configuration and adjust it to
+
+c be in HSE via modifications of the density.  Docs say this is useful for
+
+c degenerate cases like WD and NS, but I don't see why it wouldn't be useful in
+
+c general.  Don't you always want HSE for stars?
+
+dstat
+
+
+c radius0: radius of inner boundary (cm)
+
+p radius0 1.0e+06
+
+
+c summ0: Mass inside inner boundary (g)
+
+p summ0 2.8e+33
+
+
+c xlum0: luminosity emerging from inner surface (erg/s)
+
+p xlum0 1.6e+34
+
+
+c dnrtmax: Maximum fractional density change allowed between zones before adzoning
+
+p dnratmax .25
+
+
+c rnmin: Minimum radius for which adzoning is considered (cm)
+
+p rnmin 1.e+6
+
+
+c tnmin: Minimum temperature for which adzoning is considered (K)
+
+c (adzoning vs rezoning vs dezoning?)
+
+p tnmin 1.e+4
+
+
+c dnmin: Minimum density for which adzoning is considered
+
+p dnmin 2.e-5
+
+
+c izonef: Rezoning flag. izonef <= 0: no rezoning
+
+p izonef 0
+
+
+c idzonef: Dezoning flag. idzonef <= 0: no dezoning
+
+p idzonef 0
+
+
+c rnmax: Maximum radius for which rezoning is considered
+
+p rnmax 1.e+14
+
+
+c fracrz1: Multiplier in the effective values of the density, temperature, and
+
+c radius gradients used to determine the necessity for adzoning or dezoning.
+
+c This is a bound in a set of ranges used to determine the multiplicative
+
+c factor.  See docs for details.
+
+p fracrz1 .33
+
+
+c fracrz2: See fracrz1 above and relevant docs section
+
+p fracrz2 .5
+
+
+c abarratm: Used for determining rezoning based on abar.  See abarrat0 and docs.
+
+p abarratm 1.3
+
+
+c fmax0: Adzone mass fraction parameter.
+
+c See table in docs and related parameters (fmaxm, fmax1, fmaxcrz0, etc)
+
+p fmax0 .01
+
+
+c fmax1: See fmax0 and docs, has to do with adzoning on mass fraction ranges
+
+p fmax1 .015
+
+
+c fmax2: See fmax0 and docs, has to do with adzoning on mass fraction ranges
+
+p fmax2 .03
+
+
+c accrate: Rate at which mass in the form of new zones is added to the surface
+
+c of the star (Msun/yr).
+
+c
+
+c The accumulated mass is stored in xmacrete (p# 212) until it is large enough
+
+c to be added as a whole zone. The surface boundary pressure is gradually
+
+c increased at a rate proportional to accrate until a mass (in xmacrete
+
+c (p# 212)) equal to that in the current outer zone is reached. Then a new zone, the
+
+c mirror image of the old outer zone, is added. Accretion composition is set by
+
+c the compsurf command in TTYCOM. The boundary pressure from the accretion phantom
+
+c is stored in pboundac (q# 96).
+
+c
+
+c Note: This prescription will work best for coarse and roughly equal surface zoning.
+
+c
+
+c Negative accretion rate means to read in time-dependent accretion rate data
+
+c from file nameprob.acc. The file contains a comment line with version
+
+c information, then a line with the number of entries ((I6)), then the data in two
+
+c columns: time in seconds and accretion rate in grams per second. Format:
+
+c (2E25.17). The resulting rate is multiplied by accrate to allow
+
+c scaling without having to change the file. See also: accratef (p# 550) which
+
+c seems to duplicate the scaling functionality.
+
+p accrate 1.75d-9
+
+
+c minzone: Do not rezone the innermost minzone zones
+
+c minzone = 0 allows rezoning innermost zone
+
+p minzone 51
+
+
+c zonemmin: Minimum mass that a pair of zone may have and still be allowed to
+
+c be adzoned
+
+p zonemmin 1.5d19
+
+
+c zonemmax: Do not dezone zones bigger than zonemmax
+
+p zonemmax 1.0d20
+
+
+
+
+
+
+
+
+c - Convection -
+
+c fracneut: If the semi convective test parameter, W, is < 0 but greater than
+
+c -fracneut * abs(log(T1/T0)), then the zonal interface is flagged
+
+c convectively neutral (“NEUT” or ”,”).
+
+p fracneut .05
+
+
+c dtsmult: The fractional amount of semi-convective mixing that can occur in
+
+c one timestep is limited to approximately dtsmult
+
+p dtsmult 1.e+99
+
+
+c frcsound: Don't do convection if the absolute value of the zone velocity
+
+c exceeds frcsound times the local sound speed.
+
+c (Note: this provided generator had two instances of this, the second used to
+
+c be further down but I don't think that matters)
+
+p frcsound .0
+
+p frcsound 1.
+
+
+c convlim: Limit the convective velocity to a fraction convlim of the local sound speed
+
+c (Note: this provided generator had two instances of this, the second used to
+
+c be further down but I don't think that matters)
+
+p convlim .0
+
+p convlim 1.
+
+
+c woversht: The semiconvective test parameter, W, is taken to be
+
+c W = woversht * abs ( log (T1/T0)) for the special overshoot semiconvective
+
+c zones where W would otherwise be < 0 and when Abar >= abarsemi (p# 324).
+
+c If 0, no overshoot mixing.
+
+p woversht 0.
+
+
+c alpth: Efficiency factor for thermohaline convection
+
+c If set to zero no thermohaline convection is considered. Thermohaline
+
+c convections occurs in regions with destabilizing composition gradient, but
+
+c stabilizing temperature gradient (salt finger instability).
+
+c The implementation in KEPLER is according to Braun (1997, PhD thesis) and
+
+c Kippenhahn et al. (1980)
+
+c p alpth 0.
+
+
+
+c - Microphysics -
+
+c Below this mass coordinate, burn co-processing is turned off.
+
+c (won't it always be off then?  All grid points are below this)
+
+p bmasslow 2.800000019999895D33
+
+
+c This specifies the BURN generator file's name.  See rpabg for the
+
+c co-processing network's specification.
+
+genburn rpabg
+
+
+c Map the BURN abundances to the APPROX network.  This should overwrite any
+
+c previously specified APPROX abundances, e.g. from the g cards.  In other
+
+c words, the composition specified in rpabg takes precedence.
+
+mapburn
+
+
+c xkimt: Multiplier on IBEN1 opacity (why this value? what's IBEN opacity?)
+
+c p xk1mt 1.5284
+
+
+c xk2mt: Multiplier on IBEN2 opacity (why this value?)
+
+c p xk2mt 1.5284
+
+
+c xk3mt: Multiplier on Christy opacity (why this value?)
+
+c p xk3mt 1.5284
+
+
+c xk4mt: Multiplier on Compton opacity (why this value?)
+
+c p xk4mt 1.5284
+
+
+c rxkcmt: Multiplier on conductive opacity (why this value?)
+
+c p rxkcmt 1.5284
+
+
+c t7peek: Opacity will be no larger than xkmin (p# 50) + t7peek * rho * (T_7)**4
+
+p t7peek 1.e+50
+
+
+c tnucmin: Don't calculate nuclear burning in APPROX if the temperature is less
+
+c than tnucmin
+
+c NOTE: Unless the hydrogen burning rate is significant, no APPROX network
+
+c calculations will be done below 1.e+7 K, even if tnucmin < 1.e+7 K
+
+c (Note: this provided generator had two instances of this, the second used to
+
+c be further down but I don't think that matters)
+
+p tnucmin 1.0e+99
+
+p tnucmin 1.d7
+
+
+c jshell0: Innermost zone in which there is neutrino deposition (??)
+
+p jshell0 51
+
+
+c tqsemin: Floor on the temperature used in the ISE (aka QSE) calculation
+
+p tqsemin 3.e+9
+
+
+c siqselim: A sufficient condition to change a zone from the ISE to the NSE
+
+c network is for the sum of the silicon and sulphur "group" elemental mass
+
+c fractions to be less than or equal to siqselim
+
+p siqselim .02
+
+
+c wilsonmt: Docs warn caution when using this.
+
+c Multiplier on the Wilson-based nuclear EOS (except for thee thermal ion
+
+c component) if it is >= 0. Otherwise, the old non-relativistic, partial
+
+c degeneracy model for the ion EOS is used.
+
+p wilsonmt -1.
+
+
+c iold: Set to value other than 0 to use old physics - mostly fix that energy
+
+c generation in APPROX did not include neutrino losses and mass excess but only
+
+c considered differences in binding energy.
+
+c 0 -> use current physics
+
+c 1 -> no nu loss in H burning and BE instead of ME and old nu loss routines
+
+c      (old1/old2, < 1997)
+
+c other options (2,4,8, see docs)
+
+p iold 1
+
+
+c kaptab: Select opacity table
+
+c 0 -> old (??)
+
+p kaptab 0
+
+
+c btempmin: BURN co-processing is skipped if a zone's temperature is less than
+
+c btempmin
+
+c (Note: this provided generator had two instances of this, the second used to
+
+c be further down but I don't think that matters)
+
+p btempmin 1.1e8
+
+p btempmin 1.d7
+
+
+c mazful: Use Fuller et. al.'s weak rates in the BURN coprocessor
+
+c if mazful = 1, otherwise use the old rates of Mazurek and Hansen
+
+p mazful -1
+
+
+c lburn: Substitute BURN network for APPROX network (including energy
+
+c generation, Abar, Zbar, etc) when set to 1.
+
+c Abundances are mapped to APPROX abundances for plot/edit purposes only
+
+p lburn 1
+
+
+c nadapb: Enable Adaptive BURN network adjustment
+
+c 0 -> off
+
+c 1 -> on
+
+p nadapb 1
+
+
+
+c - Numerical Parameters -
+
+c dtnew: Initial timestep (sec)
+
+p dtnew 1.e-4
+
+
+c maxit: Maximum iterations on R, T, L (radius, temp, luminosity?) before retrying with smaller dt
+
+p maxit 40
+
+
+c dtcr: Maximum desired fractional change in radius per step
+
+p dtcr .05
+
+
+c dtct: Maximum desired fractional change in temperature per step
+
+p dtct .05
+
+
+c dtcd: Maximum desired fractional change in density per step
+
+p dtcd .10
+
+
+c dtcq: Maximum desired fractional linear contraction per step
+
+p dtcq .1
+
+
+c dtcdt: Maximum fractional change in timestep per step
+
+p dtcdt .99
+
+
+c nstop: Maximum number of cycles (cycles, same as steps?)
+
+p nstop 150000
+
+
+c ipup: abundance update parameter. ipup=2 means don't update abundances in
+
+c zones less than jshell0 (p# 93), the innermost zone with neutrino deposition.
+
+p ipup 2
+
+
+c dyemult: If iytsflag (p# 67) (has to do with ISE zones) >= 1, increase the
+
+c timestep sensitivity to changes in ye by a factor of dyemult
+
+p dyemult 50.
+
+
+c dyqmult: If iytsflag (p# 67) >= 1, increase the timestep sensitivity to changes in yq
+
+c by a factor of dyqmult
+
+p dyqmult 2.
+
+
+c dtcp: Maximum desired fractional change in abundances per step.
+
+p dtcp .15
+
+
+c yfloorx: Minimum elemental mass fraction that effects the timestep (I guess
+
+c for the various restrictions on fractional change?)
+
+p yfloorx 3.e-3
+
+
+c cenu: velocity centering parameter. cenu=0.5 is exact energy conservation,
+
+c cenu=1.0 is most stable.  A note in the docs says Kepler only behaves well for
+
+c cenu=1.0, so modifying it requires some understanding of what you're doing.
+
+p cenu 1.
+
+
+c dtcut: Fractional timestep reduction when a step is redone
+
+p dtcut .1
+
+
+c tfcrbu: If the maximum fractional change in radius during a timestep exceeds
+
+c tfcrbu * dtcr (p# 6), then redo step
+
+p tfcrbu 2.
+
+
+c tfctbu: If the maximum fractional change in temperature during a timestep
+
+c exceeds tfctbu * dtct (p# 7), then redo step
+
+p tfctbu 10.
+
+
+c fclmax: Maximum allowed relative convergence error in luminosity
+
+c (wtf is this so huge?)
+
+p fclmax 1.e+99
+
+
+c fclbu: Reduce timestep by dtcut (p# 53) and redo step if convergence error in
+
+c luminosity is still greater than fclbu after maxit (p# 5) iterations
+
+p fclbu 1.e+99
+
+
+c iautoout: This is said to be deprecated parameter for crays in docs, but not
+
+c sure why it's set to 5 here.  Should ask Alex.
+
+p iautoout 5
+
+
+c iflgabar: Another deprecated parameter.  Should be 0.  For reference:
+
+c The mean atomic weight, Abar, calculated in subroutine sdot is implicitly
+
+c coupled to the ion equation of state only if iflgabar /= 0 and the normal
+
+c APPROX network is being used.
+
+p iflgabar 0
+
+
+c yfloorbx: Elemental mass fraction floor for making abundance backups
+
+c (See abunminx (p# 204)).
+
+p yfloorbx .003
+
+
+c fcrmax: Maximum allowed relative convergence error in radius
+
+p fcrmax 1.d-8
+
+
+c fctmax: Maximum allowed relative convergence error in temperature
+
+p fctmax 1.d-8
+
+
+
+c=======================================================================
+
+c Now follows the command file
+
+c=======================================================================
+
+//*
+
+c ------- PARAMETERS --------
+
+c .... accretion rate 1.75D-8 (L/Ledd) * 1.7/(X + 1)
+
+p accrate 1.75D-8
+
+c .... substrate luminosity - accrate * 6.0816737e+43 * (Q/MeV)
+
+c .... 1.0642929e+36 (L/Ledd) * (Q/MeV)
+
+p xlum0   1.0642929e+36
+
+c -------------------------
+
+c ..... SCALE to He/C/O L_Edd accretion: factor 1.7 / (X + 1)
+
+o x {isoh1(jm)} def
+
+o xeddf {1.7 / (1.0 + x)} def
+
+p accrate {xeddf} *
+
+p xlum0 {xeddf} *
+
+c .......
+
+c substrate Luminosity, Q/MeV
+
+p xlum0 0.1 *
+
+c .......
+
+c set fraction of Eddington accretion rate
+
+o xledd 0.08 def
+
+p accrate {xledd} *
+
+p xlum0 {xledd} *
+
+c -------------------------
+
+c get model in equilibrium
+
+p ncnvout 0
+
+p nstop 150000
+
+p tnucmin 1.d10
+
+p tnumin 1.d7
+
+p accmass 1.d13
+
+p optconv 0.67
+
+p iaccadv 0
+
+p iacceadv 1
+
+c for APPROX ONLY
+
+p jp0 0
+
+p irtype 4
+
+plot
+
+c =========================
+
+c MATCH TO accmass - set mass of outer zone
+
+@xm(jm)<1.01d17
+
+p maxbak 20
+
+p accdepth 1.d99
+
+p iterbarm 999999
+
+c =========================
+
+@time>1.d17
+
+zerotime
+
+p toffset 0.
+
+setcycle 0
+
+cutbin
+
+c --- time-dependent accretion rate only ---
+
+c resetacc
+
+c p accrate -1.
+
+c ------------------------------------------
+
+p lburn 1
+
+p dtnew 1.
+
+p iaccadv 1
+
+c use accdepth 5.d20 for He
+
+c use accdepth 1.d20 for H
+
+c values above may be good for 0.1 Ledd,
+
+c but require scaling for lower accretion rates or more heating
+
+p accdepth 1.d20
+
+p tnucmin 1.d7
+
+p izonef 1
+
+p idzonef 1
+
+p iazonef 0
+
+p zonermax 10.
+
+p zonemmax 1.d99
+
+p ddmin 1.d4
+
+c --- decretion ---
+
+p decrate -1.D0
+
+p idecmode 1
+
+p jshell0 0
+
+p ipup 5
+
+c --- use y coordinate for zoning ---
+
+c p fmax0 1.
+
+c p fmax1 1.
+
+c p fmax2 1.
+
+c p zonemmax 1.d99
+
+c p zonermax 1.d99
+
+c p zoneymax 0.02
+
+c
+
+c --- some other stuff ---
+
+c boundary pressue
+
+c p pbound 5.d18
+
+c use 10% mass of outer zone
+
+p pbound {6.67259e-8 * zm(0) * xm(0) / (4. * 3.14159 * rn(0) ** 4 ) * 0.1}
+
+c
+
+c --- rotation ---
+
+c p centmult .667
+
+c 600 Hz rotation?
+
+c p angjacc 2.51327d15
+
+c p nangdis 1
+
+c p magnet 8
+
+c p xmagfbr 1.d-10
+
+c p xmagfbt 1.d-5
+
+c
+
+c --- plotting ---
+
+c p ipixtype 31700
+
+p irtype 11
+
+c
+
+c --- output ---
+
+p ibwarn 0
+
+c
+
+c --- termination condition ---
+
+c @time>8.E+05
+
+c end
+
